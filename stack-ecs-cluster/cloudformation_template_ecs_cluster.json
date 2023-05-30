@@ -1,0 +1,519 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+  
+    "Description" : "Cluster ECS",
+  
+  
+    "Parameters":{
+        "KeyName":{
+            "Type":"AWS::EC2::KeyPair::KeyName",
+            "Default" : " ",
+            "Description":"SSH Key Pair existente para permitir acesso SSH as instancias ECS."
+          },
+          "InstanceTypeParameter" : {
+            "Type" : "String",
+            "Default" : " ",
+            "Description" : "Digite o tamanho da instancia, por exemplo: t2.small, m4.large, m5.2xlarge."
+          },
+          "PublicIP" : {
+            "Type" : "String",
+            "Default" : "true",
+            "AllowedValues" : ["true", "false"],
+            "Description" : "Digite true ou false para indicar se um IP publico sera atribuido as instancias ECS. Default: true."
+          },
+          "InstanceMonitoringDetailed" : {
+            "Type" : "String",
+            "Default" : "true",
+            "AllowedValues" : ["true", "false"],
+            "Description" : "Digite true ou false para indicar se o monitoramento detalhado das instancias sera ativado. Default : true."
+          },
+          "ECSImageId" : {
+            "Type" : "String",
+            "Default" : "ami-0bc08634af113cccb", 
+            "Description" : "Informe o ID da AMI da imagem otimizada para ECS (ECS Optimized). Default: ami-0bc08634af113cccb."
+          },
+          "ECSClusterName" : {
+            "Type" : "String",
+            "Default" : " ",
+            "Description" : "Informe o nome do cluster ECS."
+          },
+          "Environment" : {  
+            "Type" : "String",
+            "Default" : " ",
+            "Description" : "Informe o nome do ambiente, por exemplo: prod ou stage."
+          },
+          "NameService" : {  
+            "Type" : "String",
+            "Default" : " ",
+            "Description" : "Informe o nome do service."
+          },
+          "CountDesired" : {  
+            "Type" : "String",
+            "Default" : "1",
+            "Description" : "Quantidade de tasks rodando no service. Default: 1"
+          },
+          "GraceCheckPeriods" : {  
+            "Type" : "String",
+            "Default" : "30",
+            "Description" : "O periodo de tempo, em segundos, que o Amazon ECS ignora analise de unhealthy. Default: 30"
+          },
+          "PortContainer" : {  
+            "Type" : "String",
+            "Default" : "80",
+            "Description" : "Porta do Target Group, por exemplo: 80, 8080. Default: 80"
+          },
+          "ArnCertificate" : {  
+            "Type" : "String",
+            "Default" : " ",
+            "Description" : "ARN do certificado HTTPS - (ACM)."
+          },
+          "ALBScheme" : {  
+            "Type" : "String",
+            "AllowedValues" : ["internal", "internet-facing"],
+            "Default" : "internet-facing",
+            "Description" : "Modo de funcionamento do ALB, internal ou internet-facing. Default: internet-facing."
+          },
+          "SSLPolicy" : {  
+            "Type" : "String",
+            "AllowedValues" : ["ELBSecurityPolicy-2016-08", "ELBSecurityPolicy-TLS-1-2-2017-01", "ELBSecurityPolicy-TLS-1-1-2017-01", "ELBSecurityPolicy-TLS-1-2-Ext-2018-06"],
+            "Default" : "ELBSecurityPolicy-TLS-1-2-2017-01",
+            "Description" : "As security policies que definem as cifras e protocolos que o listener suporta. Default: ELBSecurityPolicy-TLS-1-2-2017-01."
+          },
+          "PortHost" : {  
+            "Type" : "String",
+            "Default" : "0",
+            "Description" : "Um mapeamento da porta do conteiner para uma porta do host. Default: 0."
+          },
+          "ApplicationName" : {  
+            "Type" : "String",
+            "Default" : " ",
+            "Description" : "Digite o nome da aplicacao, por exemplo: webservice."
+          },
+          "MemoryHard" : {  
+            "Type" : "String",
+            "Default" : "500",
+            "Description" : "O hard limite (em MiB) de memoria a ser atribuido ao conteiner. Default: 500."
+          },
+          "MemorySoft" : {  
+            "Type" : "String",
+            "Default" : "300",
+            "Description" : "O soft limite (em MiB) de memoria a ser reservado para o conteiner. Default: 300."
+          },
+          "ImageAddress" : {  
+            "Type" : "String",
+            "Default" : " ",
+            "Description" : "A imagem utilizada no conteiner."
+          },
+          "ASSubnet1" : {  
+            "Type" : "AWS::EC2::Subnet::Id",
+            "Default" : " ",
+            "Description" : "Selecione o ID da primeira sub-rede."
+          },
+          "ASSubnet2" : {  
+            "Type" : "AWS::EC2::Subnet::Id",
+            "Default" : " ",
+            "Description" : "Selecione o ID da segunda sub-rede."
+          },
+          "ASSubnet3" : {  
+            "Type" : "AWS::EC2::Subnet::Id",
+            "Default" : " ",
+            "Description" : "Selecione o ID da terceira sub-rede."
+          },
+          "ASDesiredCapacity" : {  
+            "Type" : "String",
+            "Default" : "1",
+            "Description" : "numero desejado de instancias. Default: 1."
+          },
+          "ASMaxSize" : {  
+            "Type" : "String",
+            "Default" : "1",
+            "Description" : "numero maximo de instancias. Default: 1."
+          },
+          "ASMinSize" : {  
+            "Type" : "String",
+            "Default" : "1",
+            "Description" : "numero minimo de instancias. Default: 1."
+          },
+           "TaskDefVersion" : {
+            "Type" : "String",
+            "Default" : "1",
+            "Description" : "numero da revisao da task definition. Se for uma nova task definition. Default: 1."
+           },
+           "ECSTaskContainerName" : {
+            "Type" : "String",
+            "Default" : " ",
+            "Description" : "Nome da task definition, por exemplo: nginx-prod."
+           },
+          "EbsVolumeSize":{
+            "Type":"String",
+            "Default": "50",
+            "Description":"Tamanho do volume EBS (minimo de 30GB)."
+          },
+          "EbsVolumeType":{
+            "Type":"String",
+            "Default" : "gp2",
+            "AllowedValues" : ["gp2"],
+            "Description":"Tipo de volume EBS, por exemplo, gp2 ou io1. Default: gp2."
+          },
+           "VPCID" : {
+            "Type" : "AWS::EC2::VPC::Id",
+            "Default" : " ",
+            "Description" : "Selecione o ID da VPC."
+           },
+           "TGProtocol" : {
+            "Type" : "String",
+            "AllowedValues" : ["HTTP", "HTTPS"],
+            "Default" : "HTTP",
+            "Description" : "O protocolo a ser usado para rotear o trafego para os targets. Default: HTTP"
+           }
+          }, 
+          "Metadata" : {
+    "AWS::CloudFormation::Interface" : {
+      "ParameterGroups" : [
+        {
+          "Label" : { "default":"Application Parameters" },
+          "Parameters" : [ "ApplicationName", "Environment" ]
+        },
+        {
+          "Label" : { "default":"Cluster ECS" },
+          "Parameters" : [ "ECSClusterName" ]
+        },
+        {
+          "Label" : { "default":"ECS Service" },
+          "Parameters" : [ "NameService", "CountDesired", "GraceCheckPeriods"]
+        },
+        {
+          "Label" : { "default" : "LaunchConfiguration" },
+          "Parameters" : [ "KeyName", "ECSImageId", "InstanceTypeParameter", "IAMRoleLaunchConfig", "PublicIP", "InstanceMonitoringDetailed", "EbsVolumeSize", "EbsVolumeType" ]
+        },
+        {
+          "Label" : { "default":"AutoScaling" },
+          "Parameters" : [ "VPCID", "ASMinSize", "ASDesiredCapacity", "ASMaxSize", "ASSubnet1", "ASSubnet2", "ASSubnet3"  ]
+        },
+        {
+          "Label" : { "default":"ALB Configuration" },
+          "Parameters" : [ "ArnCertificate", "ALBScheme", "SSLPolicy" ]
+        },
+        {
+          "Label" : { "default":"Target Group" },
+          "Parameters" : [ "PortContainer", "TGProtocol" ]
+        },
+        {
+          "Label" : { "default":"ECS Task Definition" },
+          "Parameters" : [ "ECSTaskContainerName", "TaskDefVersion", "PortHost", "MemoryHard", "MemorySoft", "ImageAddress"]
+        }
+      ],
+      "ParameterLabels" : {
+        "ApplicationName" : { "default" : "Application Name" },
+        "Environment" : { "default" : "Environment Name" },
+        "ECSClusterName" : { "default" : "ECS Cluster Name" },
+        "NameService" : { "default" : "ECS Service Name" },
+        "CountDesired" : { "default" : "Tasks Count Desired" },
+        "GraceCheckPeriods" : { "default" : "GracePeriod Service" },
+        "KeyName" : { "default" : "Acess Key ECS Instances" },
+        "ECSImageId" : { "default" : "AMI ID ECS Optmized " },
+        "InstanceTypeParameter" : { "default" : "ECS Instance Type" },
+        "PublicIP" : { "default" : "Public IP for Ecs Instances ?" },
+        "InstanceMonitoringDetailed" : { "default" : "Instance Monitoring" },  
+        "EbsVolumeSize" : { "default" : "Ebs Volume Size" },
+        "EbsVolumeType" : { "default" : "Ebs Volume Type" },   
+        "ArnCertificate" : { "default" : "Certificate Arn" },
+        "ALBScheme" : { "default" : "ALB Type" },
+        "TGProtocol" : {"default" : "Target Group Protocol"},
+        "ECSTaskContainerName" : {"default" : "Task Definition Name"},
+        "TaskDefVersion" : {"default" : "Task Definition Version"},
+        "PortHost" : {"default" : "Instance Port"},
+        "MemoryHard" : {"default" : "Hard Memory"},
+        "MemorySoft" : {"default" : "Soft Memory"},
+        "IAMRoleLaunchConfig" : { "default" : "Role for ECS Instances" },
+        "ASMinSize" : { "default" : "Min Instances Number" },
+        "ASDesiredCapacity" : { "default" : "Desired Instances Number" },
+        "ASMaxSize" : { "default" : "Max Instances Number" },
+        "ASSubnet1" : { "default" : "Subnet ID AZ 1" },
+        "ASSubnet2" : { "default" : "Subnet ID AZ 2" },
+        "ASSubnet3" : { "default" : "Subnet ID AZ 3" },
+        "IAMRoleService" : { "default" : "Role for ECS Services" }
+      }
+    }
+  },
+    "Resources" : {
+      "ALBSecurityGroup" : {
+        "Type": "AWS::EC2::SecurityGroup",
+        "DependsOn" : "ALBTargetGroup",
+        "Properties": {
+            "GroupDescription": { "Fn::Join" : ["", ["SG - ALB ECS-", { "Ref" : "ECSClusterName" } ]]},
+            "Tags" : [
+              {
+                "Key" : "Name",
+                "Value" : { "Fn::Join" : ["", ["SG - ALB ECS-", { "Ref" : "ECSClusterName" } ]]}
+              }
+            ],
+            "SecurityGroupIngress": [{
+                   "IpProtocol": "tcp",
+                    "FromPort": "80",
+                    "ToPort": "80",
+                    "CidrIp": "0.0.0.0/0"
+                },
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": "443",
+                    "ToPort": "443",
+                    "CidrIp": "0.0.0.0/0"
+                }
+            ],
+            "VpcId": { "Ref": "VPCID" }
+        }
+    },
+      "ECSInstanceSecurityGroup" : {
+        "Type": "AWS::EC2::SecurityGroup",
+        "DependsOn" : "ALBSecurityGroup",
+        "Properties": {
+            "GroupDescription": { "Fn::Join" : ["", ["SG - ECS-", {"Ref" : "ECSClusterName" }, " Instances" ]]},
+            "Tags" : [
+              {
+                "Key" : "Name",
+                "Value" : { "Fn::Join" : ["", ["SG - ECS-", {"Ref" : "ECSClusterName" }, " Instances" ]]}
+              }
+            ],
+            "SecurityGroupIngress": [{
+                    "IpProtocol": "-1",
+                    "SourceSecurityGroupId": {"Fn::GetAtt" : ["ALBSecurityGroup", "GroupId"]}
+                }
+            ],
+            "VpcId": { "Ref": "VPCID" }
+        }
+    },
+    "ECSnstanceSecGroupIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "DependsOn": "ECSInstanceSecurityGroup",
+      "Properties": {
+        "GroupId": { "Ref": "ECSInstanceSecurityGroup" },
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId": { "Ref": "ECSInstanceSecurityGroup" }
+      }
+    },
+      "RoleEcsInstance" : {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role" ],
+          "RoleName": { "Fn::Join" : ["", ["RoleEcsInstance", { "Ref" : "ECSClusterName" }]]},
+          "AssumeRolePolicyDocument": { 
+            "Version" : "2012-10-17",
+            "Statement": [ {
+               "Effect": "Allow",
+               "Principal": {
+                  "Service": [ "ec2.amazonaws.com" ]
+               },
+               "Action": [ "sts:AssumeRole" ]
+            } ]
+         }
+    }
+  },
+      "RoleInstanceProfile": {
+        "Type": "AWS::IAM::InstanceProfile",
+        "DependsOn" : "RoleEcsInstance",
+        "Properties": {
+          "InstanceProfileName" : { "Fn::Join" : ["", ["ECS", {"Ref" : "Environment" }, "InstanceProfile" ]]},
+           "Path": "/",
+           "Roles": [ {
+              "Ref": "RoleEcsInstance"
+           } ]
+        }
+      },
+      "RoleEcsService" : {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole" ],
+          "RoleName": { "Fn::Join" : ["", ["RoleEcsService", { "Ref" : "ECSClusterName" }]]},
+          "AssumeRolePolicyDocument": { 
+            "Version" : "2012-10-17",
+            "Statement": [ {
+               "Effect": "Allow",
+               "Principal": {
+                  "Service": [ "ecs.amazonaws.com" ]
+               },
+               "Action": [ "sts:AssumeRole" ]
+            } ]
+         }
+    }
+  },                  
+      "LaunchConfig" : {
+        "Type" : "AWS::AutoScaling::LaunchConfiguration",
+        "Properties" : {
+           "LaunchConfigurationName" : { "Fn::Join" : ["", ["LC-ECS-", {"Ref" : "ECSClusterName" }]]},
+           "KeyName" : { "Ref" : "KeyName" },
+           "AssociatePublicIpAddress" : { "Ref" : "PublicIP" },
+           "ImageId" : { "Ref" : "ECSImageId" },
+           "IamInstanceProfile" : { "Ref" : "RoleInstanceProfile" },
+           "SecurityGroups" : [{ "Ref" : "ECSInstanceSecurityGroup" }],
+           "InstanceType" : { "Ref" : "InstanceTypeParameter" },
+           "InstanceMonitoring" : { "Ref" : "InstanceMonitoringDetailed" },
+           "BlockDeviceMappings" : [ {
+                 "DeviceName" : "/dev/sdk",
+                 "Ebs" : {"VolumeSize" : { "Ref" : "EbsVolumeSize" },
+                          "VolumeType" : { "Ref" : "EbsVolumeType" }}
+              }],
+              "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+                "#!/bin/bash -xe\n",
+                "echo ECS_CLUSTER=", {"Ref":"ECSCluster"}," >> /etc/ecs/ecs.config"
+            ]]}
+            
+            }
+        }
+    },
+     "ECSAutoscaling" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "DependsOn" : "LaunchConfig",
+      "Properties" : {
+        "AutoScalingGroupName" : { "Fn::Join" : ["", ["ASG-ECS-", {"Ref" : "ECSClusterName" }]]},
+         "VPCZoneIdentifier" : [{ "Fn::Join" : [",", [{"Ref": "ASSubnet1"}, {"Ref": "ASSubnet2"}, {"Ref": "ASSubnet3"} ]]}],
+         "Cooldown" : 300,
+         "HealthCheckGracePeriod" : 300,
+         "HealthCheckType" : "EC2",
+         "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
+         "MaxSize" : { "Ref" : "ASMaxSize" },
+         "MinSize" : { "Ref" : "ASMinSize" },
+         "DesiredCapacity" : { "Ref" : "ASDesiredCapacity" },
+         "Tags" : [ 
+           {
+             "Key" : "Name",
+             "Value" : { "Fn::Join" : ["", ["ECS-", {"Ref" : "ECSClusterName" }, " Nodes"]]},
+             "PropagateAtLaunch" : "true"
+          }
+         ],
+         "TerminationPolicies" : [ "OldestInstance"]
+        }  
+      }, 
+     "ECSCluster":{
+        "Type":"AWS::ECS::Cluster",
+        "Properties" : {
+            "ClusterName" : { "Ref" : "ECSClusterName" }
+          }
+      },
+      "ECSService":{
+        "Type" : "AWS::ECS::Service",
+        "DependsOn" : ["LaunchConfig", "ECSTaskDefinition", "ALBConfig", "ALBListenerHTTPS", "ECSCluster"],
+        "Properties" : {
+        "Cluster" : { "Ref" : "ECSClusterName" },
+        "LaunchType" : "EC2",
+        "TaskDefinition" : { "Fn::Join" : [":", [{ "Ref" : "ECSTaskContainerName" }, {"Ref": "TaskDefVersion"} ]]},
+        "ServiceName" : { "Ref" : "NameService" },
+        "SchedulingStrategy" : "REPLICA",
+        "DesiredCount" : { "Ref" : "CountDesired" },
+        "HealthCheckGracePeriodSeconds" : { "Ref" : "GraceCheckPeriods" },
+        "LoadBalancers" : [{
+        "TargetGroupArn": { "Ref" : "ALBTargetGroup" },
+        "ContainerName": { "Ref" : "ECSTaskContainerName" },
+        "ContainerPort": { "Ref" : "PortContainer" }
+          }],
+        "Role" : { "Ref" : "RoleEcsService" }
+    }
+   },
+      "ECSTaskDefinition" : {
+        "Type" : "AWS::ECS::TaskDefinition",
+        "DependsOn" : "LaunchConfig",
+        "Properties" : {
+          "Family" : { "Ref" : "ECSTaskContainerName" },
+          "NetworkMode" : "bridge",
+          "ContainerDefinitions" : [{
+        "PortMappings": [
+          {
+            "HostPort": { "Ref" : "PortHost" },
+            "Protocol": "tcp",
+            "ContainerPort": { "Ref" : "PortContainer" }
+          }
+        ],
+        "Cpu": 0,
+        "Environment": [
+          {
+            "Name": "APPLICATION",
+            "Value": { "Ref" : "ApplicationName" }
+          },
+          {
+            "Name": "ENVIRONMENT",
+            "Value": { "Ref" : "Environment" }
+          }
+        ],
+        "Memory": { "Ref" : "MemoryHard" },
+        "MemoryReservation": { "Ref" : "MemorySoft" },
+        "VolumesFrom": [],
+        "Image": { "Ref" : "ImageAddress" },
+        "Name": { "Ref" : "ECSTaskContainerName" }
+      }
+    ]
+    }
+  },
+      "ALBConfig" : {  
+          "Type" : "AWS::ElasticLoadBalancingV2::LoadBalancer",
+          "DependsOn" : ["ALBSecurityGroup", "LaunchConfig"],
+          "Properties" : { 
+            "Name" : { "Fn::Join" : ["-", ["ALB-ECS", {"Ref" : "ECSClusterName" }]]}, 
+            "IpAddressType" : "ipv4",
+            "Scheme" : { "Ref" : "ALBScheme" },
+            "SecurityGroups" : [{ "Ref" : "ALBSecurityGroup" }],
+            "Subnets" : [{"Ref": "ASSubnet1"}, {"Ref": "ASSubnet2"}, {"Ref": "ASSubnet3"}],
+            "Type" : "application"
+      }
+  },
+  
+  
+  
+      "ALBListenerHTTP" : {  
+           "Type" : "AWS::ElasticLoadBalancingV2::Listener",
+           "DependsOn" : "ALBConfig",
+           "Properties" : {
+             "LoadBalancerArn" : { "Ref" : "ALBConfig" },
+             "Port" : 80,
+             "Protocol" : "HTTP",
+             "DefaultActions" : [
+                 {
+                     "Type" : "redirect",
+                     "RedirectConfig" : {
+                       "Port" : 443,
+                       "Protocol" : "HTTPS",
+                       "StatusCode" : "HTTP_301"
+                 }
+               }
+             ]
+        }
+      }, 
+      "ALBListenerHTTPS" : {  
+        "Type" : "AWS::ElasticLoadBalancingV2::Listener",
+        "DependsOn" : "ALBConfig",
+        "Properties" : {
+          "Certificates" : [
+            {
+                "CertificateArn" : { "Ref" : "ArnCertificate" }
+              }
+          ],
+          "DefaultActions" : [ 
+            {
+                "Order" : 1,
+                "TargetGroupArn" : { "Ref" : "ALBTargetGroup" },
+                "Type" : "forward"
+              }
+           ],
+          "LoadBalancerArn" : { "Ref" : "ALBConfig" },
+          "Port" : 443,
+          "Protocol" : "HTTPS",
+          "SslPolicy" : { "Ref" : "SSLPolicy" }
+      }
+  },
+      "ALBTargetGroup" : {
+       "Type" : "AWS::ElasticLoadBalancingV2::TargetGroup",
+       "Properties" : {
+         "HealthCheckIntervalSeconds" : 30,
+         "HealthCheckPath" : "/",
+         "HealthCheckProtocol" : "HTTP",
+         "HealthCheckTimeoutSeconds" : 5,
+         "HealthyThresholdCount" : 5,
+         "Name" : { "Fn::Join" : ["-", [ "tg", {"Ref": "ApplicationName"}, {"Ref": "ECSClusterName"} ]]},
+         "Port" : 80,
+         "Protocol" : { "Ref" : "TGProtocol" },
+         "TargetType" : "instance",
+         "UnhealthyThresholdCount" : 5,
+         "VpcId" : { "Ref" : "VPCID" }
+    }
+  } 
+  }
+  }
